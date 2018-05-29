@@ -5,6 +5,48 @@ eosDir1 = 'eos/cms/store/group/phys_egamma/tnp/80X/PhoEleIDs/v1/'
 eosDir2 = 'eos/cms/store/group/phys_egamma/tnp/80X/PhoEleIDs/v2/'
 eosDirREC = 'eos/cms/store/group/phys_egamma/tnp/80X/RecoSF/RECOSFs_2016/'
 eosWinter17 = 'eos/cms/store/group/phys_egamma/tnp/80X/PhoEleIDs/Moriond17_v1/'
+ntuple_2017_tnp = '/home/jhkim/TnPFit/samples/' # test for private tnp samples 
+
+HLT_DoubleEle25_CaloIdL_MW_v2 = {
+    'data_Run2017C_v3p0' : tnpSample('data_Run2017C_v3p0' , ntuple_2017_tnp + 'data/temp/tnp_data.root', lumi = 1.0),
+    'data_Run2017E' : tnpSample('data_Run2017E' , ntuple_2017_tnp + 'data/temp/Run2017E_HLT_DoubleEle25_CaloIdL_MW_v2_Ele35Tag_.root', lumi = 1.0),
+    'data_Run2017E_Ele35Tag' : tnpSample('data_Run2017E_Ele35Tag' , ntuple_2017_tnp + 'data/Run2017E_HLT_DoubleEle25_CaloIdL_MW_v2_Ele35Tag.root', lumi = 1.0),
+    'data_Run2017F' : tnpSample('data_Run2017F' , ntuple_2017_tnp + 'data/temp/runF/Run2017F_HLT_DoubleEle25_CaloIdL_MW_v2_Ele35Tag_.root', lumi = 1.0),
+
+    'DY_powheg_M50_120' : tnpSample('DY_powheg_M50_120', ntuple_2017_tnp + 'mc/DY_powheg_M_50_120_HLT_DoubleEle25_CaloIdL_MW_v2_UnSeededInfo.root', isMC = True, nEvts = -1),
+    'DY_powheg_M50_120_Ele35Tag' : tnpSample('DY_powheg_M50_120_Ele35Tag', ntuple_2017_tnp + 'mc/DY_powheg_M_50_120_HLT_DoubleEle25_CaloIdL_MW_v2_Ele35Tag.root', isMC = True, nEvts = -1),
+}
+
+HLT_DoubleEle25_CaloIdL_MW_v2_performance = {
+    'data_Run2017_HLT_v3*' : tnpSample('data_Run2017_HLT_v3*' , ntuple_2017_tnp + 'data/temp/Run2017DtoF_HLT_DoubleEle25_CaloIdL_MW_v2_Ele35Tag.root', lumi = 1.0),
+    'data_Run2017_HLT_v4*' : tnpSample('data_Run2017_HLT_v4*' , ntuple_2017_tnp + 'data/temp/Run2017DtoF_HLT_DoubleEle25_CaloIdL_MW_v2_Ele35Tag.root', lumi = 1.0),
+
+    'DY_powheg_M50_120_Ele35Tag' : tnpSample('DY_powheg_M50_120_Ele35Tag', ntuple_2017_tnp + 'mc/DY_powheg_M_50_120_HLT_DoubleEle25_CaloIdL_MW_v2_Ele35Tag_MiniAOD.root', isMC = True, nEvts = -1),
+}
+
+#HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_v_performance = {
+#    'data_Run2017_HLT_v13' : tnpSample('data_Run2017_HLT_v13' , ntuple_2017_tnp + 'data/temp/Run2017C_HLT_Ele23_Ele12.root', lumi = 1.0),
+#    'data_Run2017_HLT_v14' : tnpSample('data_Run2017_HLT_v14' , ntuple_2017_tnp + 'data/temp/Run2017C_HLT_Ele23_Ele12.root', lumi = 1.0),
+#    'data_Run2017_HLT_v15' : tnpSample('data_Run2017_HLT_v15' , ntuple_2017_tnp + 'data/temp/Run2017C_HLT_Ele23_Ele12.root', lumi = 1.0),
+#    'data_Run2017_HLT_v16' : tnpSample('data_Run2017_HLT_v16' , ntuple_2017_tnp + 'data/temp/Run2017DtoF_HLT_Ele23_Ele12.root', lumi = 1.0),
+#    'data_Run2017_HLT_v17' : tnpSample('data_Run2017_HLT_v17' , ntuple_2017_tnp + 'data/temp/Run2017DtoF_HLT_Ele23_Ele12.root', lumi = 1.0),
+#
+#    'DY_powheg_M50_120' : tnpSample('DY_powheg_M50_120', ntuple_2017_tnp + 'mc/DY_powheg_M_50_120_HLT_Ele23_Ele23_nonDZ_L1PS_3.root', isMC = True, nEvts = -1),
+#}
+
+HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_v_performance = {
+    #'data_Run2017_HLT_v13' : tnpSample('data_Run2017_HLT_v13' , ntuple_2017_tnp + 'data/SingleElectron_2017/SingleElectron_2017B-F_HLT_Ele23_Ele12.root', lumi = 1.0),
+    #'data_Run2017_HLT_v14' : tnpSample('data_Run2017_HLT_v14' , ntuple_2017_tnp + 'data/SingleElectron_2017/SingleElectron_2017B-F_HLT_Ele23_Ele12.root', lumi = 1.0),
+    #'data_Run2017_HLT_v15' : tnpSample('data_Run2017_HLT_v15' , ntuple_2017_tnp + 'data/SingleElectron_2017/SingleElectron_2017B-F_HLT_Ele23_Ele12.root', lumi = 1.0),
+    #'data_Run2017_HLT_v16' : tnpSample('data_Run2017_HLT_v16' , ntuple_2017_tnp + 'data/SingleElectron_2017/SingleElectron_2017B-F_HLT_Ele23_Ele12.root', lumi = 1.0),
+    'data_Run2017_HLT_Commissioning' : tnpSample('data_Run2017_HLT_Commissioning' , ntuple_2017_tnp + 'data/SingleElectron_2017/SingleElectron_2017B-F_HLT_Double.root', lumi = 1.0),
+    'data_Run2017_HLT_Nominal WP Pre Oct 5th' : tnpSample('data_Run2017_HLT_Nominal WP Pre Oct 5th' , ntuple_2017_tnp + 'data/SingleElectron_2017/SingleElectron_2017B-F_HLT_Double.root', lumi = 1.0),
+    'data_Run2017_HLT_Nominal WP Post Oct 5th' : tnpSample('data_Run2017_HLT_Nominal WP Post Oct 5th' , ntuple_2017_tnp + 'data/SingleElectron_2017/SingleElectron_2017B-F_HLT_Double.root', lumi = 1.0),
+
+    #'DY_powheg_M50_120' : tnpSample('DY_powheg_M50_120', ntuple_2017_tnp + 'mc/DY_powheg_M_50_120_HLT_Ele23_Ele23_nonDZ_L1PS_3.root', isMC = True, nEvts = -1),
+    'DY_powheg_M50_120' : tnpSample('DY_powheg_M50_120', ntuple_2017_tnp + 'mc/DY_powheg_M_50_120_MINIAODSIM_HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_94X_mc2017_realistic_v10.root', isMC = True, nEvts = -1),
+}
+
 Moriond17_80X = {
     ### MiniAOD TnP for IDs scale factors
     'DY_madgraph'          : tnpSample('DY_madgraph',

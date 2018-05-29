@@ -6,11 +6,11 @@ import sys
 import pickle
 import shutil
 
-
 parser = argparse.ArgumentParser(description='tnp EGM fitter')
 parser.add_argument('--checkBins'  , action='store_true'  , help = 'check  bining definition')
 parser.add_argument('--createBins' , action='store_true'  , help = 'create bining definition')
 parser.add_argument('--createHists', action='store_true'  , help = 'create histograms')
+parser.add_argument('--createHists_v2', action='store_true'  , help = 'create histograms v2') #### added by me: draw plots using cut and count effciency
 parser.add_argument('--sample'     , default='all'        , help = 'create histograms (per sample, expert only)')
 parser.add_argument('--altSig'     , action='store_true'  , help = 'alternate signal model fit')
 parser.add_argument('--altBkg'     , action='store_true'  , help = 'alternate background model fit')
@@ -20,8 +20,8 @@ parser.add_argument('--doPlot'     , action='store_true'  , help = 'plotting')
 parser.add_argument('--sumUp'      , action='store_true'  , help = 'sum up efficiencies')
 parser.add_argument('--iBin'       , dest = 'binNumber'   , type = int,  default=-1, help='bin number (to refit individual bin)')
 parser.add_argument('--flag'       , default = None       , help ='WP to test')
+parser.add_argument('--plotX'       , default = None       , help ='x axis of plot to draw') #### added by me: plot type to draw
 parser.add_argument('settings'     , default = None       , help = 'setting file [mandatory]')
-
 
 args = parser.parse_args()
 
@@ -46,7 +46,7 @@ if not args.flag in tnpConf.flags.keys() :
     print tnpConf.flags.keys()
     sys.exit(1)
 
-outputDirectory = '%s/%s/' % (tnpConf.baseOutDir,args.flag)
+outputDirectory = '%s/%s/%s' % (tnpConf.baseOutDir,args.flag, args.plotX)
 
 print '===>  Output directory: '
 print outputDirectory
@@ -81,26 +81,128 @@ tnpBins = pickle.load( open( '%s/bining.pkl'%(outputDirectory),'rb') )
 ####################################################################
 ##### Create Histograms
 ####################################################################
-for s in tnpConf.samplesDef.keys():
+#keyNames = ['data', 'data_1', 'data_2', 'data_3', 'data_4','mcNom','mcAlt','tagSel']
+keyNames = ['data', 'data_1', 'data_2','mcNom','mcAlt','tagSel']
+#keyNames = ['data', 'mcNom','mcAlt','tagSel']
+#for s in tnpConf.samplesDef.keys():
+for s in keyNames:
     sample =  tnpConf.samplesDef[s]
     if sample is None: continue
     setattr( sample, 'tree'     ,'%s/fitter_tree' % tnpConf.tnpTreeDir )
-    setattr( sample, 'histFile' , '%s/%s_%s.root' % ( outputDirectory , sample.name, args.flag ) )
+    setattr( sample, 'histFile' , '%s/%s_%s_%s.root' % ( outputDirectory , sample.name, args.flag, args.plotX ) )
 
+dataList = []
+mcList = []
+fOutList = []
 
 if args.createHists:
-    for sampleType in tnpConf.samplesDef.keys():
+    #for sampleType in tnpConf.samplesDef.keys():
+    for sampleType in keyNames:
         sample =  tnpConf.samplesDef[sampleType]
         if sample is None : continue
         if sampleType == args.sample or args.sample == 'all' :
             print 'creating histogram for sample '
             sample.dump()
-            var = { 'name' : 'pair_mass', 'nbins' : 80, 'min' : 50, 'max': 130 }
+            var = { 'name' : 'pair_mass', 'nbins' : 60, 'min' : 60, 'max': 120 }
             if sample.mcTruth:
-                var = { 'name' : 'pair_mass', 'nbins' : 80, 'min' : 50, 'max': 130 }
+                var = { 'name' : 'pair_mass', 'nbins' : 60, 'min' : 60, 'max': 120 }
+                mcList.append(sample.histFile)
+            else:
+               dataList.append(sample.histFile)
+               print sample.histFile 
+               print dataList
+
             tnpRoot.makePassFailHistograms( sample, tnpConf.flags[args.flag], tnpBins, var )
+    # root files with historams are created
+
+    print dataList
+    for datumList in dataList :
+        print datumList
+    
+        #### added by me: make efficiency text file using cut and count efficiency 
+        info = {
+            #'data'        :   outputDirectory + '/data_Run2017E_Ele35Tag_' + args.flag + '_' + args.plotX + '.root',
+            'data'        :   datumList,
+            'dataNominal' : None,
+            'dataAltSig'  : None,
+            'dataAltBkg'  : None,
+            #'mcNominal'   :  outputDirectory + '/DY_powheg_M50_120_Ele35Tag_' + args.flag + '_' + args.plotX + '.root',
+            'mcNominal'   :  mcList[0],
+            #'mcNominal'   :  None,
+            'mcAlt'       : None,
+            'tagSel'      : None
+            }
+    
+        effis = None
+        effFileName ='%s/egammaEffi%s.txt' % (outputDirectory, (datumList.split('/')[5]).split('.root')[0])
+        fOut = open( effFileName,'w')
+        fOutList.append(effFileName)
+    
+        for ib in range(len(tnpBins['bins'])):
+            #effis = tnpRoot.getAllEffi( info, tnpBins['bins'][ib] )
+            effis = tnpRoot.getAllNumbers( info, tnpBins['bins'][ib] )
+    
+            ### formatting assuming 2D bining -- to be fixed        
+            v1Range = tnpBins['bins'][ib]['title'].split(';')[1].split('<')
+            v2Range = tnpBins['bins'][ib]['title'].split(';')[2].split('<')
+            if ib == 0 :
+                astr = '### var1 : %s' % v1Range[1]
+                print astr
+                fOut.write( astr + '\n' )
+                astr = '### var2 : %s' % v2Range[1]
+                print astr
+                fOut.write( astr + '\n' )
+    
+            astr =  '%+8.3f\t%+8.3f\t%+8.3f\t%+8.3f\t%5.3f\t%5.3f\t%5.3f\t%5.3f\t%5.3f\t%5.3f\t%5.3f\t%5.3f' % (
+                float(v1Range[0]), float(v1Range[2]),
+                float(v2Range[0]), float(v2Range[2]),
+                effis['data'][0],effis['data'][1],
+                effis['mcNominal'  ][0],effis['mcNominal'  ][1],
+                effis['dataAltBkg' ][0],
+                effis['dataAltSig' ][0],
+                effis['mcAlt' ][0],
+                effis['tagSel'][0],
+                )
+            print astr
+            fOut.write( astr + '\n' )
+        fOut.close()
+    ####
+
+    print fOutList
+    sys.exit(0)
+
+#### added by me: draw plot
+if args.createHists_v2:
+    from os import listdir
+
+    #### collect all effi txt files
+    fOutList = []
+    for s in keyNames:
+        sample =  tnpConf.samplesDef[s]
+        if sample is None: continue
+        temp_ = sample.name
+
+        if temp_.split('_')[0] == 'data' :
+           temp_txtFile = outputDirectory + '/' + 'egammaEffidata_' + temp_.split('_')[1] + '_' + temp_.split('_')[2] + '_' + temp_.split('_')[3] + '_' + args.flag + '_' + args.plotX + '.txt'
+           fOutList.append(temp_txtFile)
+           print temp_txtFile
+
+    print fOutList
+    import libPython.EGammaID_scaleFactors as egm_sf
+
+    #if 'nvtx' in args.plotX : egm_sf.draw1Dplot(effFileName, -1., outputDirectory, ['PV','eta'])
+    #if 'z' in args.plotX : egm_sf.draw1Dplot(effFileName, -1., outputDirectory, ['z','eta'])
+    #if 'eta' in args.plotX :egm_sf.draw1Dplot(effFileName, -1., outputDirectory, ['eta','pt'])
+    #if 'phi' in args.plotX :egm_sf.draw1Dplot(effFileName, -1., outputDirectory, ['phi','eta'])
+    #if 'et' in args.plotX : egm_sf.draw1Dplot(effFileName, -1., outputDirectory)
+
+    if 'phi' == args.plotX : egm_sf.draw1Dplots(fOutList, -1., outputDirectory, ['phi','eta'])
+    if 'eta' == args.plotX : egm_sf.draw1Dplots(fOutList, -1., outputDirectory, ['eta','pt'])
+    if 'nvtx' == args.plotX : egm_sf.draw1Dplots(fOutList, -1., outputDirectory, ['PV','eta'])
+    if 'et' == args.plotX : egm_sf.draw1Dplots(fOutList, -1., outputDirectory)
 
     sys.exit(0)
+####
 
 
 ####################################################################

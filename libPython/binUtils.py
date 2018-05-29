@@ -21,6 +21,8 @@ def createBins( bining, cut ):
         nb1D = 1
         if   bining[iv]['type'] == 'float' :
             nb1D = len(bining[iv]['bins'])-1
+        if   bining[iv]['type'] == 'abs_float' :
+            nb1D = len(bining[iv]['bins'])-1
         elif bining[iv]['type'] == 'int' :
             nb1D = len(bining[iv]['bins'])
         nbin = nbin * nb1D
@@ -61,11 +63,22 @@ def createBins( bining, cut ):
                     binCut   = '%s >= %f && %s < %f' % (var,bins1D[ix[iv]],var,bins1D[ix[iv]+1])
                     binTitle = '%1.3f < %s < %1.3f'  % (bins1D[ix[iv]],var,bins1D[ix[iv]+1])
                 else:
-                    binCut   = '%s && %s >= %f && %s < %f' % (binCut  ,var,bins1D[ix[iv]],var,bins1D[ix[iv]+1])
+                    binCut   = '%s && %s >= %f && %s < %f' % (binCut  ,var,bins1D[ix[iv]],var,bins1D[ix[iv]+1]) 
                     binTitle = '%s; %1.3f < %s < %1.3f'    % (binTitle,bins1D[ix[iv]],var,bins1D[ix[iv]+1])
                 binName  = '%s_%s_%1.2fTo%1.2f'  % (binName ,var,bins1D[ix[iv]],bins1D[ix[iv]+1])
                 binVars[var] = { 'min': bins1D[ix[iv]], 'max': bins1D[ix[iv]+1]}
-
+          
+            #### added by me:
+            if varType == 'abs_float' :
+                if binCut is None:
+                    binCut   = 'abs(%s) >= %f && abs(%s) < %f' % (var,bins1D[ix[iv]],var,bins1D[ix[iv]+1])
+                    binTitle = '%1.3f < %s < %1.3f'  % (bins1D[ix[iv]],var,bins1D[ix[iv]+1]) #### somehow if abs() is put in the title, number of entries not counted
+                else:
+                    binCut   = '%s && abs(%s) >= %f && abs(%s) < %f' % (binCut  ,var,bins1D[ix[iv]],var,bins1D[ix[iv]+1]) 
+                    binTitle = '%s; %1.3f < %s < %1.3f'    % (binTitle,bins1D[ix[iv]],var,bins1D[ix[iv]+1])
+                binName  = '%s_%s_%1.2fTo%1.2f'  % (binName ,var,bins1D[ix[iv]],bins1D[ix[iv]+1])
+                binVars[var] = { 'min': bins1D[ix[iv]], 'max': bins1D[ix[iv]+1]}
+            ####
                 
             if varType == 'int' :
                 if binCut is None: 

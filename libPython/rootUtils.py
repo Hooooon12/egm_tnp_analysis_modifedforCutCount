@@ -32,7 +32,8 @@ def makePassFailHistograms( sample, flag, bindef, var ):
     
         cuts = bindef['bins'][ib]['cut']
         if sample.mcTruth :
-            cuts = '%s && mcTrue==1' % cuts
+            #cuts = '%s && mcTrue==1' % cuts
+            cuts = '%s' % cuts
         if not sample.cut is None :
             cuts = '%s && %s' % (cuts,sample.cut)
 
@@ -42,15 +43,19 @@ def makePassFailHistograms( sample, flag, bindef, var ):
 #                ## for high pT change the failing spectra to any probe to get statistics
 #                if bindef['bins'][ib]['vars'][aVar]['min'] > 89: notflag = '( %s  || !(%s) )' % (flag,flag)
 
-        if sample.isMC and not sample.weight is None:
-            cutPass = '( %s && %s ) * %s ' % (cuts,    flag, sample.weight)
-            cutFail = '( %s && %s ) * %s ' % (cuts, notflag, sample.weight)
-            if sample.maxWeight < 999:
-                cutPass = '( %s && %s ) * (%s < %f ? %s : 1.0 )' % (cuts,    flag, sample.weight,sample.maxWeight,sample.weight)
-                cutFail = '( %s && %s ) * (%s < %f ? %s : 1.0 )' % (cuts, notflag, sample.weight,sample.maxWeight,sample.weight)
-        else:
-            cutPass = '( %s && %s )' % (cuts,    flag)
-            cutFail = '( %s && %s )' % (cuts, notflag)
+        #if sample.isMC and not sample.weight is None:
+        #    cutPass = '( %s && %s ) * %s ' % (cuts,    flag, sample.weight)
+        #    cutFail = '( %s && %s ) * %s ' % (cuts, notflag, sample.weight)
+        #    if sample.maxWeight < 999:
+        #        cutPass = '( %s && %s ) * (%s < %f ? %s : 1.0 )' % (cuts,    flag, sample.weight,sample.maxWeight,sample.weight)
+        #        cutFail = '( %s && %s ) * (%s < %f ? %s : 1.0 )' % (cuts, notflag, sample.weight,sample.maxWeight,sample.weight)
+        #else:
+        #    cutPass = '( %s && %s )' % (cuts,    flag)
+        #    cutFail = '( %s && %s )' % (cuts, notflag)
+        
+        # edited by me: don't consider mc weight
+        cutPass = '( %s && %s )' % (cuts,    flag)
+        cutFail = '( %s && %s )' % (cuts, notflag)
         
         tree.Draw('%s >> %s' % (var['name'],hPass[ib].GetName()),cutPass,'goff')
         tree.Draw('%s >> %s' % (var['name'],hFail[ib].GetName()),cutFail,'goff')
@@ -92,8 +97,21 @@ def histPlotter( filename, tnpBin, plotDir ):
 
 def computeEffi( n1,n2,e1,e2):
     effout = []
-    eff   = n1/(n1+n2)
-    e_eff = 1/(n1+n2)*math.sqrt(e1*e1*n2*n2+e2*e2*n1*n1)/(n1+n2)
+
+    #### added by me: for the case where tag + fail is zero
+    eff = 0
+    e_eff = 0
+
+    if n1+n2 == 0: 
+       eff = 0
+       e_eff = 0 
+    else         : 
+       eff   = n1/(n1+n2)
+       e_eff = 1/(n1+n2)*math.sqrt(e1*e1*n2*n2+e2*e2*n1*n1)/(n1+n2)
+
+    if eff < 0.001 : eff = 0.001 
+    ####
+
     if e_eff < 0.001 : e_eff = 0.001
 
     effout.append(eff)
@@ -101,6 +119,174 @@ def computeEffi( n1,n2,e1,e2):
     
     return effout
 
+#### add by me: calculate binomial error
+def computeEffi_bino( n1,n2,e1,e2):
+    effout = []
+
+    #### added by me: for the case where tag + fail is zero
+    eff = 0
+    e_eff = 0
+
+    if n1+n2 == 0:
+       eff = 0
+       e_eff = 0
+    else         :
+       eff   = n1/(n1+n2)
+       e_eff = math.sqrt(eff*(1-eff)/(n1+n2))
+
+    if eff < 0.001 : eff = 0.001
+    ####
+
+    if e_eff < 0.001 : e_eff = 0.001
+
+    effout.append(eff)
+    effout.append(e_eff)
+
+    return effout
+####
+
+## return the number of passed/ total events NOT efficiency
+import os.path
+def getAllNumbers( info, bindef ):
+    effis = {}
+    if not info['mcNominal'] is None and os.path.isfile(info['mcNominal']):
+        rootfile = rt.TFile( info['mcNominal'], 'read' )
+        hP = rootfile.Get('%s_Pass'%bindef['name'])
+        hF = rootfile.Get('%s_Fail'%bindef['name'])
+        bin1 = 1
+        bin2 = hP.GetXaxis().GetNbins()
+        eP = rt.Double(-1.0)
+        eF = rt.Double(-1.0)
+        nP = hP.IntegralAndError(bin1,bin2,eP)
+        nF = hF.IntegralAndError(bin1,bin2,eF)
+
+        effis['mcNominal'] = [nP, nP+nF]
+        rootfile.Close()
+    else: effis['mcNominal'] = [-1,-1]
+
+    #### added by me: cut and count for data when fit result is poor
+    if not info['data'] is None and os.path.isfile(info['data']):
+        rootfile = rt.TFile( info['data'], 'read' )
+        hP = rootfile.Get('%s_Pass'%bindef['name'])
+        hF = rootfile.Get('%s_Fail'%bindef['name'])
+        bin1 = 1
+        bin2 = hP.GetXaxis().GetNbins()
+        eP = rt.Double(-1.0)
+        eF = rt.Double(-1.0)
+        nP = hP.IntegralAndError(bin1,bin2,eP)
+        nF = hF.IntegralAndError(bin1,bin2,eF)
+
+        effis['data'] = [nP, nP+nF]
+        rootfile.Close()
+    else: effis['data'] = [-1,-1]
+    ####
+    if not info['tagSel'] is None and os.path.isfile(info['tagSel']):
+        rootfile = rt.TFile( info['tagSel'], 'read' )
+        hP = rootfile.Get('%s_Pass'%bindef['name'])
+        hF = rootfile.Get('%s_Fail'%bindef['name'])
+        bin1 = 1
+        bin2 = hP.GetXaxis().GetNbins()
+        eP = rt.Double(-1.0)
+        eF = rt.Double(-1.0)
+        nP = hP.IntegralAndError(bin1,bin2,eP)
+        nF = hF.IntegralAndError(bin1,bin2,eF)
+
+        effis['tagSel'] = computeEffi(nP,nF,eP,eF)
+        rootfile.Close()
+    else: effis['tagSel'] = [-1,-1]
+
+    if not info['mcAlt'] is None and os.path.isfile(info['mcAlt']):
+        rootfile = rt.TFile( info['mcAlt'], 'read' )
+        hP = rootfile.Get('%s_Pass'%bindef['name'])
+        hF = rootfile.Get('%s_Fail'%bindef['name'])
+        bin1 = 1
+        bin2 = hP.GetXaxis().GetNbins()
+        eP = rt.Double(-1.0)
+        eF = rt.Double(-1.0)
+        nP = hP.IntegralAndError(bin1,bin2,eP)
+        nF = hF.IntegralAndError(bin1,bin2,eF)
+
+        effis['mcAlt'] = computeEffi(nP,nF,eP,eF)
+        rootfile.Close()
+    else: effis['mcAlt'] = [-1,-1]
+
+    if not info['dataNominal'] is None and os.path.isfile(info['dataNominal']) :
+        rootfile = rt.TFile( info['dataNominal'], 'read' )
+        from ROOT import RooFit,RooFitResult
+        fitresP = rootfile.Get( '%s_resP' % bindef['name']  )
+        fitresF = rootfile.Get( '%s_resF' % bindef['name'] )
+
+        fitP = fitresP.floatParsFinal().find('nSigP')
+        fitF = fitresF.floatParsFinal().find('nSigF')
+
+        nP = fitP.getVal()
+        nF = fitF.getVal()
+        eP = fitP.getError()
+        eF = fitF.getError()
+        rootfile.Close()
+
+        rootfile = rt.TFile( info['data'], 'read' )
+        hP = rootfile.Get('%s_Pass'%bindef['name'])
+        hF = rootfile.Get('%s_Fail'%bindef['name'])
+
+        if eP > math.sqrt(hP.Integral()) : eP = math.sqrt(hP.Integral())
+        if eF > math.sqrt(hF.Integral()) : eF = math.sqrt(hF.Integral())
+        rootfile.Close()
+
+        effis['dataNominal'] = computeEffi(nP,nF,eP,eF)
+    else:
+        effis['dataNominal'] = [-1,-1]
+
+    if not info['dataAltSig'] is None and os.path.isfile(info['dataAltSig']) :
+        rootfile = rt.TFile( info['dataAltSig'], 'read' )
+        from ROOT import RooFit,RooFitResult
+        fitresP = rootfile.Get( '%s_resP' % bindef['name']  )
+        fitresF = rootfile.Get( '%s_resF' % bindef['name'] )
+
+        nP = fitresP.floatParsFinal().find('nSigP').getVal()
+        nF = fitresF.floatParsFinal().find('nSigF').getVal()
+        eP = fitresP.floatParsFinal().find('nSigP').getError()
+        eF = fitresF.floatParsFinal().find('nSigF').getError()
+        rootfile.Close()
+
+        rootfile = rt.TFile( info['data'], 'read' )
+        hP = rootfile.Get('%s_Pass'%bindef['name'])
+        hF = rootfile.Get('%s_Fail'%bindef['name'])
+
+        if eP > math.sqrt(hP.Integral()) : eP = math.sqrt(hP.Integral())
+        if eF > math.sqrt(hF.Integral()) : eF = math.sqrt(hF.Integral())
+        rootfile.Close()
+
+        effis['dataAltSig'] = computeEffi(nP,nF,eP,eF)
+
+    else:
+        effis['dataAltSig'] = [-1,-1]
+
+    if not info['dataAltBkg'] is None and os.path.isfile(info['dataAltBkg']):
+        rootfile = rt.TFile( info['dataAltBkg'], 'read' )
+        from ROOT import RooFit,RooFitResult
+        fitresP = rootfile.Get( '%s_resP' % bindef['name']  )
+        fitresF = rootfile.Get( '%s_resF' % bindef['name'] )
+
+        nP = fitresP.floatParsFinal().find('nSigP').getVal()
+        nF = fitresF.floatParsFinal().find('nSigF').getVal()
+        eP = fitresP.floatParsFinal().find('nSigP').getError()
+        eF = fitresF.floatParsFinal().find('nSigF').getError()
+        rootfile.Close()
+
+        rootfile = rt.TFile( info['data'], 'read' )
+        hP = rootfile.Get('%s_Pass'%bindef['name'])
+        hF = rootfile.Get('%s_Fail'%bindef['name'])
+
+        if eP > math.sqrt(hP.Integral()) : eP = math.sqrt(hP.Integral())
+        if eF > math.sqrt(hF.Integral()) : eF = math.sqrt(hF.Integral())
+        rootfile.Close()
+
+        effis['dataAltBkg'] = computeEffi(nP,nF,eP,eF)
+    else:
+        effis['dataAltBkg'] = [-1,-1]
+
+    return effis
 
 import os.path
 def getAllEffi( info, bindef ):
@@ -116,9 +302,26 @@ def getAllEffi( info, bindef ):
         nP = hP.IntegralAndError(bin1,bin2,eP)
         nF = hF.IntegralAndError(bin1,bin2,eF)
 
-        effis['mcNominal'] = computeEffi(nP,nF,eP,eF)
+        effis['mcNominal'] = computeEffi_bino(nP,nF,eP,eF)
         rootfile.Close()
     else: effis['mcNominal'] = [-1,-1]
+
+    #### added by me: cut and count for data when fit result is poor
+    if not info['data'] is None and os.path.isfile(info['data']):
+        rootfile = rt.TFile( info['data'], 'read' )
+        hP = rootfile.Get('%s_Pass'%bindef['name'])
+        hF = rootfile.Get('%s_Fail'%bindef['name'])
+        bin1 = 1
+        bin2 = hP.GetXaxis().GetNbins()
+        eP = rt.Double(-1.0)
+        eF = rt.Double(-1.0)
+        nP = hP.IntegralAndError(bin1,bin2,eP)
+        nF = hF.IntegralAndError(bin1,bin2,eF)
+
+        effis['data'] = computeEffi_bino(nP,nF,eP,eF)
+        rootfile.Close()
+    else: effis['data'] = [-1,-1]
+    ####
 
     if not info['tagSel'] is None and os.path.isfile(info['tagSel']):
         rootfile = rt.TFile( info['tagSel'], 'read' )

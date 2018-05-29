@@ -7,12 +7,12 @@ cutpass90 = '(( abs(probe_sc_eta) < 0.8 && probe_Ele_nonTrigMVA > %f ) ||  ( abs
 
 # flag to be Tested
 flags = {
-    'passingVeto'   : '(passingVeto   == 1)',
-    'passingLoose'  : '(passingLoose  == 1)',
-    'passingMedium' : '(passingMedium == 1)',
-    'passingTight'  : '(passingTight  == 1)',
-    'passingMVA80'  : cutpass80,
-    'passingMVA90'  : cutpass90,
+    'passSeededHLT'  : '(passHLT  == 1) && (passL1T  == 1)',
+    'passL1T'  : '(passL1T  == 1)',
+    'passHE'  : '(passSeededHE  == 1)',
+    'passSie'  : '(passSeededClusterShape  == 1)',
+    'passPM'  : '(passSeededPM  == 1)',
+    'passSeededS2'  : '(passHLT  == 1)',
     }
 baseOutDir = 'results/test/'
 
@@ -22,23 +22,25 @@ baseOutDir = 'results/test/'
 ### samples are defined in etc/inputs/tnpSampleDef.py
 ### not: you can setup another sampleDef File in inputs
 import etc.inputs.tnpSampleDef as tnpSamples
-tnpTreeDir = 'GsfElectronToEleID'
+
+tnpTreeDir = 'tnpEleTrig' # tree name of the input root files 
 
 samplesDef = {
-    'data'   : tnpSamples.ICHEP2016['data_2016_runC_ele'].clone(),
-    'mcNom'  : tnpSamples.ICHEP2016['mc_DY_madgraph_ele'].clone(),
-    'mcAlt'  : tnpSamples.ICHEP2016['mc_DY_amcatnlo_ele'].clone(),
-    'tagSel' : tnpSamples.ICHEP2016['mc_DY_madgraph_ele'].clone(),
+    'data'   : tnpSamples.HLT_DoubleEle25_CaloIdL_MW_v2['data_Run2017E_Ele35Tag'].clone(),
+    #'data_test'   : tnpSamples.HLT_DoubleEle25_CaloIdL_MW_v2['data_Run2017E'].clone(),
+    'mcNom'  : tnpSamples.HLT_DoubleEle25_CaloIdL_MW_v2['DY_powheg_M50_120_Ele35Tag'].clone(),
+    'mcAlt'  : None,
+    'tagSel' : None,
 }
 ## can add data sample easily
-#samplesDef['data'].add_sample( tnpSamples.ICHEP2016['data_2016_runC_ele'] )
+#samplesDef['data'].add_sample( tnpSamples.HLT_DoubleEle25_CaloIdL_MW_v2['data_Run2017F'] )
 #samplesDef['data'].add_sample( tnpSamples.ICHEP2016['data_2016_runD_ele'] )
 
 ## some sample-based cuts... general cuts defined here after
 ## require mcTruth on MC DY samples and additional cuts
 ## all the samples MUST have different names (i.e. sample.name must be different for all)
 ## if you need to use 2 times the same sample, then rename the second one
-#samplesDef['data'  ].set_cut('run >= 273726')
+#samplesDef['data'  ].set_cut('run >= 304333')
 if not samplesDef['mcNom' ] is None: samplesDef['mcNom' ].set_mcTruth()
 if not samplesDef['mcAlt' ] is None: samplesDef['mcAlt' ].set_mcTruth()
 if not samplesDef['tagSel'] is None: samplesDef['tagSel'].set_mcTruth()
@@ -56,15 +58,43 @@ if not samplesDef['tagSel'] is None: samplesDef['tagSel'].set_weight(weightName)
 ########## bining definition  [can be nD bining]
 #############################################################
 biningDef = [
-   { 'var' : 'probe_sc_eta' , 'type': 'float', 'bins': [-2.5,-2.0,-1.566,-1.4442, -0.8, 0.0, 0.8, 1.4442, 1.566, 2.0, 2.5] },
-   { 'var' : 'probe_Ele_pt' , 'type': 'float', 'bins': [10,20.0,30,40,50,200] },
+   #{ 'var' : 'probe_sc_eta' , 'type': 'float', 'bins': [-2.5,-2.2,-1.566,-1.4442, -1.0, -0.6,-0.3,-0.1, 0.1, 0.3,0.6,1.0, 1.4442, 1.566, 2.2, 2.5] },
+   #{ 'var' : 'probe_sc_et' , 'type': 'float', 'bins': [30,100] },
+
+   #{ 'var' : 'probe_sc_eta' , 'type': 'float', 'bins': [-2.5,-1.479, 0.0, 1.479, 2.5] },
+   #{ 'var' : 'probe_sc_phi' , 'type': 'float', 'bins': [ -3.15, -2.4, -1.8, -1.2, -0.6, 0., 0.6, 1.2, 1.8, 2.4, 3.15] }, # X axis
+
+   #{ 'var' : 'probe_sc_eta' , 'type': 'float', 'bins': [-2.5,-1.479, 0.0, 1.479, 2.5] },
+   #{ 'var' : 'event_PrimaryVertex_z' , 'type': 'float', 'bins': [ 0., 1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 12., 14., 16., 18., 20.] }, # X axis
+
+   { 'var' : 'probe_sc_eta' , 'type': 'float', 'bins': [-2.5,-1.479, 0.0, 1.479, 2.5] },
+   { 'var' : 'probe_sc_et' , 'type': 'float', 'bins': [10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 27.0, 28.5, 30.0, 35.0, 40.0, 45.0, 50.0,60.0,70.0,80.0,100.0] },
+
+   #{ 'var' : 'probe_sc_eta' , 'type': 'float', 'bins': [-2.5,-1.479, 0.0, 1.479, 2.5] },
+   #{ 'var' : 'event_nPV' , 'type': 'float', 'bins': [0., 3., 6., 9., 12., 15., 18., 21., 24., 27., 30., 33., 36., 39., 42., 45., 48., 51., 54., 57., 60.] },
+   #{ 'var' : 'event_nPV' , 'type': 'float', 'bins': [0., 3.] },
+
 ]
 
 #############################################################
 ########## Cuts definition for all samples
 #############################################################
 ### cut
-cutBase   = 'tag_Ele_pt > 30 && abs(tag_sc_eta) < 2.1'
+
+#cutBase   = 'tag_sc_et > 35 && abs(tag_sc_eta) < 2.1 && probe_sc_et > 30'
+cutBase   = 'tag_sc_et > 35 && abs(tag_sc_eta) < 2.1'
+
+#cutBase   = 'tag_sc_et > 35 && abs(tag_sc_eta) < 2.1 && probe_sc_et > 30 && passL1T  == 1'
+#cutBase   = 'tag_sc_et > 35 && abs(tag_sc_eta) < 2.1 && passL1T  == 1'
+
+#cutBase   = 'tag_sc_et > 35 && abs(tag_sc_eta) < 2.1 && probe_sc_et > 30 && passL1T  == 1 && passSeededHE  == 1'
+#cutBase   = 'tag_sc_et > 35 && abs(tag_sc_eta) < 2.1 && passL1T  == 1 && passSeededHE  == 1'
+
+#cutBase   = 'tag_sc_et > 35 && abs(tag_sc_eta) < 2.1 && probe_sc_et > 30 && passL1T  == 1 && passSeededHE  == 1 && passSeededClusterShape  == 1'
+#cutBase   = 'tag_sc_et > 35 && abs(tag_sc_eta) < 2.1 && passL1T  == 1 && passSeededHE  == 1 && passSeededClusterShape  == 1'
+
+#cutBase   = 'tag_sc_et > 35 && abs(tag_sc_eta) < 2.1 && probe_sc_et > 30 && passL1T  == 1 && passSeededHE  == 1 && passSeededClusterShape  == 1 && passSeededPM == 1'
+#cutBase   = 'tag_sc_et > 35 && abs(tag_sc_eta) < 2.1 && passL1T  == 1 && passSeededHE  == 1 && passSeededClusterShape  == 1 && passSeededPM  == 1'
 
 # can add addtionnal cuts for some bins (first check bin number using tnpEGM --checkBins)
 additionalCuts = { 
@@ -81,7 +111,7 @@ additionalCuts = {
 }
 
 #### or remove any additional cut (default)
-#additionalCuts = None
+additionalCuts = None
 
 #############################################################
 ########## fitting params to tune fit by hand if necessary
